@@ -1,8 +1,6 @@
 /*
-* @Author: Marte
-* @Date:   2017-11-08 15:29:21
-* @Last Modified by:   Marte
-* @Last Modified time: 2017-11-14 16:43:27
+* @Author: limingle
+* @Date:   2017-11-28 15:29:21
 */
 
 'use strict';
@@ -11,7 +9,8 @@ const fs = require('fs')
 const qs = require('qs')
 const path = require('path')
 const router = express.Router()
-const formidable = require("formidable");
+const formidable = require("formidable")
+const Mock = require('mockjs')
 
 router.all('*', function (req, response, next) {
     response.setHeader("Access-Control-Allow-Origin", "*");
@@ -122,4 +121,36 @@ function fileDisplay(filePath,fileList){
         }
     })
 }  
+
+/**
+ * 根据mock模板生成数据
+ * 通过post请求
+ * contentType类型为application/json
+ * 因为结构复杂最好使用此contentType类型
+ */
+router.post('/api/getMockData', function (req, res) {
+    try{
+        let body=req.body
+        let mockParams = body.mockParams
+        if(!mockParams){
+            res.json({
+                success:false,
+                msg:"没有包含mockParams参数",
+                data:""
+            })
+        }
+        let mockData = Mock.mock(mockParams)
+        res.json({
+            success:true,
+            msg:"",
+            data:mockData
+        })
+    }catch(e){
+        res.json({
+            success:false,
+            msg:e.message,
+            data:""
+        })
+    }
+})
 module.exports = router
