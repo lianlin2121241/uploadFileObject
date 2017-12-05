@@ -17,6 +17,7 @@
     requestAPI:'http://localhost:8888/api/',//api地址
     cookieName:'hchBlog',   //cookie名字
     expires:'30',           //cookie失效时间（天）
-    jwtSecret:'lihongjie'  //jwt加密钥匙
+    jwtSecret:'lihongjie',  //jwt加密钥匙
+    webSocketPoint:3001     //websocket端口
 }
 module.exports=devConfig

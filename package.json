@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.2",
-    "mockjs": "^1.0.1-beta3"
+    "mockjs": "^1.0.1-beta3",
+    "ws": "^3.3.2"
   },
   "devDependencies": {
     "body-parser": "^1.18.2",
