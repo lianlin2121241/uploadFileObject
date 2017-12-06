@@ -3,14 +3,15 @@ const Config = require('../../config')
 
 let wss = new WebsocketServer({port:Config.webSocketPoint})
 
-// 是否为查询状态
-let isSearching = false;
-// ws实例
-let wsInstance = null;
-// 停止发送请求
-let stopEvent = false;
 // ws连接事件
 wss.on('connection', function (ws) {
+    // 是否为查询状态
+    let isSearching = false;
+    // ws实例
+    let wsInstance = null;
+    // 停止发送请求
+    let stopEvent = false;
+    
     wsInstance=ws;
     ws.on('message', async function (message) {
         var stockRequest = JSON.parse(message);//根据请求过来的数据来更新。
@@ -19,13 +20,14 @@ wss.on('connection', function (ws) {
             isSearching=true;
             let result = await startSendMessage();
             if(result){
-                wsInstance.send(JSON.stringify({
+                isSearching=false;
+                wsInstance.readyState==1 && wsInstance.send(JSON.stringify({
                     searchState:1,
                     msg:"查询全部数据成功"
                 }));
             }else{
                 isSearching=false;
-                wsInstance.send(JSON.stringify({
+                wsInstance.readyState==1 && wsInstance.send(JSON.stringify({
                     searchState:-1,
                     msg:"停止查询数据"
                 }));
@@ -34,6 +36,52 @@ wss.on('connection', function (ws) {
             stopEvent=true;
         }
     });
+
+    /**
+     * 发送结果
+     * @param {object} 发送的结果
+     */
+    function sendResult(obj){
+        let timeStep=randomInterval(1000,4000);
+        return new Promise(resolve => {
+            setTimeout(() => {
+                obj['result'] = getResult();
+                wsInstance.readyState==1 && wsInstance.send(JSON.stringify(obj));
+                resolve("OK");
+            }, timeStep);
+        });
+    }
+    
+    /**
+     * 发送消息
+     */
+    async function startSendMessage(){
+        let state = 'bukong';
+        for(let i=0,leni=PROVINCE_ARRAY.length;i<leni;i++){
+            for(let j=0,lenj=RESOURCE_ARRAY.length;j<lenj;j++){
+                if(stopEvent){
+                    stopEvent=false;
+                    return false;
+                }
+                var obj={
+                    searchState:0,
+                    province:PROVINCE_ARRAY[i],
+                    resource:RESOURCE_ARRAY[j],
+                    state:state,
+                    result:-1
+                }
+                wsInstance.readyState==1 && wsInstance.send(JSON.stringify(obj));
+                await sendResult(obj);
+            }
+            if(state==='bukong'){
+                i--;
+                state='chekong'
+            }else{
+                state='bukong'
+            }
+        }
+        return true
+    }
 })
 
 // 资源数组
@@ -51,56 +99,10 @@ function randomInterval(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-/**
- * 发送结果
- * @param {object} 发送的结果
- */
-function sendResult(obj){
-    let timeStep=randomInterval(1000,4000);
-    return new Promise(resolve => {
-        setTimeout(() => {
-            obj['result'] = getResult();
-            wsInstance.send(JSON.stringify(obj));
-            resolve("OK");
-        }, timeStep);
-    });
-}
-
 
 /**
  * 获取发送的结果
  */
 function getResult(){
     return Math.round(Math.random());
-}
-
-/**
- * 发送消息
- */
-async function startSendMessage(){
-    let state = 'bukong';
-    for(let i=0,leni=PROVINCE_ARRAY.length;i<leni;i++){
-        for(let j=0,lenj=RESOURCE_ARRAY.length;j<lenj;j++){
-            if(stopEvent){
-                stopEvent=false;
-                return false;
-            }
-            var obj={
-                searchState:0,
-                province:PROVINCE_ARRAY[i],
-                resource:RESOURCE_ARRAY[j],
-                state:state,
-                result:-1
-            }
-            wsInstance.send(JSON.stringify(obj));
-            await sendResult(obj);
-        }
-        if(state==='bukong'){
-            i--;
-            state='chekong'
-        }else{
-            state='bukong'
-        }
-    }
-    return true
 }
